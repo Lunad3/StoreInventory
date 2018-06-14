@@ -45,6 +45,7 @@ var makePurchase = function (products){
             name: "quantity",
             choices: stockList
         }]).then(function(quantityStr){
+            console.log("             total: $"+ parseInt(quantityStr.quantity)*products[parseInt(product.id)-1].price);
             console.log("\n+++++++++++++++++++++++++++++++++++++++++++\n");
             var stockLeft = parseInt(stockList[stockList.length-1])-parseInt(quantityStr.quantity)
             updateStock(stockLeft,product.id);
