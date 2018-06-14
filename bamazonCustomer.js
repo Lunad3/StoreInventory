@@ -9,7 +9,7 @@ var formatPurchase = function(idStr, quantityStr){
     idStr = idStr.trim();
     quantityStr = quantityStr.trim();
     //check that both arguments str contain only numbers
-    if (!isNaN(idStr) && !isNaN(quantityStr)){
+    if (!isNaN(idStr) && !isNaN(quantityStr) && idStr != "" && quantityStr != ""){
         //return obj with ints
         return {
             "productId": parseInt(idStr),
@@ -19,8 +19,27 @@ var formatPurchase = function(idStr, quantityStr){
 };
 
 
-var Start = function (){
-    console.log("================= Bamazon =================");
+var askContinueShopping = function(){
+    iqrr.prompt([{
+        type:"list",
+        message:"Continue Shopping?",
+        name: "continueShopping",
+        choices: ["yes","no"]
+    }]).then(function(input){
+        if(input.continueShopping == "yes"){
+            makePurchase();
+        }
+        else{
+            console.log("\n  ->Thanks for shopping with Bamazon\n");
+            console.log("===========================================");
+                }
+    });
+};
+
+
+var makePurchase = function (){
+    console.log("\n+++++++++++++++++ Purchase ++++++++++++++++\n");
+    // console.log("+++++++++++++++++++++++++++++++++++++++++++");
     iqrr.prompt([{
             type:"input",
             message: "Product ID of item to purchase:",
@@ -30,33 +49,29 @@ var Start = function (){
             message: "                      Quantity:",
             name: "quantity"
         }]).then(function(input){
-            console.log("-------------------------------------------");
+            console.log("\n-------------------------------------------\n");
             // purchase.productId (int) && purchse.quantity (int)
             var purchase = formatPurchase(input.productId,input.quantity);
             if (purchase != undefined){
-                console.log("  ->Searching inventory for " + purchase.quantity + " of product " + purchase.productId);
-                console.log("  ->UPDATE INVENTORY");
-                iqrr.prompt([{
-                    type:"list",
-                    message:"Continue Shopping?",
-                    name: "continueShopping",
-                    choices: ["yes","no"]
-                }]).then(function(input){
-                    if(input.continueShopping == "yes"){
-                        Start();
-                    }
-                    else{
-                        console.log("-------------------------------------------");
-                        console.log("  ->Thanks for shopping with Bamazon");
-                        console.log("===========================================");
-                    }
-                });
+                console.log("\n-------------------------------------------\n");
+
+                console.log("  ->UPDATE INVENTORY\n");//<--------------------------------------------- INSERT MYSQL LOGIC/function HERE
+                
+                askContinueShopping();
+
             }
             else{
+                console.log("\n-------------------------------------------\n");
                 console.log("  ->Sorry, your input is invalid, please use only numbers");
-                Start();
+                console.log("\n+++++++++++++++++++++++++++++++++++++++++++\n");
+                askContinueShopping();
             }
     });
+};
+
+var Start = function(){
+    console.log("================= Bamazon =================\n");
+    makePurchase();
 };
 
 Start();
