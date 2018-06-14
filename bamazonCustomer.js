@@ -1,7 +1,7 @@
 var iqrr = require("inquirer");
 var sql  = require("mysql");
 
-var db = mysql.createConnection({
+var db = sql.createConnection({
     host: "localhost",
   
     // Your port; if not 3306
@@ -15,10 +15,6 @@ var db = mysql.createConnection({
     database: "bamazon"
   });
   
-
-// The first should ask them the ID of the product they would like to buy.
-// The second message should ask how many units of the product they would like to buy.
-
 var askContinueShopping = function(){
     iqrr.prompt([{
         type:"list",
@@ -27,25 +23,16 @@ var askContinueShopping = function(){
         choices: ["yes","no"]
     }]).then(function(input){
         if(input.continueShopping == "yes"){
-            makePurchase();
+            start();
         }
         else{
-            console.log("\n  ->Thanks for shopping with Bamazon\n");
-            console.log("===========================================");
-                }
-    });
-};
 
-var listProduct = function(){
-    var productList = [];
-    db.query("SELECT * FROM products", function(err,productsTable){
-        if(err) throw err;
-        for (var productIndex = 0; productIndex < productsTable.length; productIndex++){
-            var str = productsTable[productIndex].item_id.toString() + " : " + productsTable[productIndex].product_name;
-            productList.push(str);
+            db.end();
+            console.log("\n===========================================\n");
+            console.log("  Thanks for shopping with Bamazon");
+            console.log("\n===========================================\n");
         }
     });
-    return productList;
 };
 
 var productStr2Obj = function(productStr){
@@ -54,66 +41,77 @@ var productStr2Obj = function(productStr){
 };
 
 
-var listProductStock = function(myProductObj){
-    var quantities = [];
-    db.query("SELECT * FROM products WHERE item_id LIKE '%" + myProductObj.id + "%';",function(err,product){
-        if(err) throw err;
-        var quantity = parseInt(product.stock_quantity);
-        for (var q = 1; q <= quantity; q++){
-            quantities.push(q.toString());
+var listProductStock = function(products,id){
+    var result = [];
+    for (var i=0; i<products.length; i++){
+        if (products[i].item_id == id){
+            for (var counter=0; counter<=products[i].stock_quantity; counter++){
+                result.push(counter.toString());
+            }
+            return result;
         }
-    });
-    return quantities;
+    }
 };
 
-var updateStock = function(newQuantity, Id){
-    connection.query(
-        "UPDATE auctions SET ? WHERE ?",
+var updateStock = function(newStock, Id){
+    db.query(
+        "UPDATE products SET ? WHERE ?",
         [{
-            stock_quantity: newQuantity
+            stock_quantity: newStock
           },{
             item_id: Id
         }],
         function(error) {
-          if (error) throw err;
-          console.log("  ->INVENTORY UPDATED\n");
-        }
-      );
+          if (error) throw error;
+          console.log("  INVENTORY UPDATED");
+          console.log("\n-------------------------------------------\n");
+          askContinueShopping();
+    });
 }
 
-var makePurchase = function (){
+
+var makePurchase = function (products){
     console.log("\n+++++++++++++++++ Purchase ++++++++++++++++\n");
     iqrr.prompt([{
         type:"list",
         message: "select a product:",
-        name:"name",
-        choices: listProductNames()
+        name:"choice",
+        choices: products2IdAndNameList(products)
     }]).then(function(productStr){
-        var product = productStr2Obj(productStr);
-        var stockList = listProductStock(product)
+        var product = productStr2Obj(productStr.choice);
+        var stockList = listProductStock(products,product.id)
         iqrr.prompt([{
             type:"list",
             message: "        Quantity:",
             name: "quantity",
             choices: stockList
         }]).then(function(quantityStr){
-            var stockLeft = parseInt(stockList[stockList.length])-parseInt(quantityStr.quantity)
-            // purchase.productId (int) && purchse.quantity (int)
+            var stockLeft = parseInt(stockList[stockList.length-1])-parseInt(quantityStr.quantity)
             console.log("\n-------------------------------------------\n");
             updateStock(stockLeft,product.id);
-            console.log("\n-------------------------------------------\n");
-            askContinueShopping();
         });
     });
 };
 
+var products2IdAndNameList = function (list){
+    var result = [];
+    for (var i=0; i<list.length; i++){
+        if (parseInt(list[i].stock_quantity) != 0){
+            result.push( list[i].item_id.toString() + " : " + list[i].product_name);
+        }
+    }
+    return result;
+};
+
 var start = function(){
-    console.log("================= Bamazon =================\n");
-    makePurchase();
+    db.query("SELECT * FROM products", function(err,products){
+        if(err) throw err;
+        makePurchase(products);
+    });
 };
 
 db.connect(function(err) {
     if (err) throw err;
-    // run the start function after the connection is made to prompt the user
+    console.log("================= Bamazon =================\n");
     start();
   });
