@@ -16,28 +16,47 @@ var formatPurchase = function(idStr, quantityStr){
             "quantity" : parseInt(quantityStr)
         };
     }
-    else{
-        console.log("BamazonCustomer::InputError:: one or more inputs containt non-numer characters");
-    }
 };
 
 
 var Start = function (){
+    console.log("================= Bamazon =================");
     iqrr.prompt([{
             type:"input",
-            message: "Product ID of item to purchase: ",
+            message: "Product ID of item to purchase:",
             name:"productId",
         },{
             type:"input",
             message: "                      Quantity:",
             name: "quantity"
         }]).then(function(input){
+            console.log("-------------------------------------------");
             // purchase.productId (int) && purchse.quantity (int)
             var purchase = formatPurchase(input.productId,input.quantity);
             if (purchase != undefined){
-                
+                console.log("  ->Searching inventory for " + purchase.quantity + " of product " + purchase.productId);
+                console.log("  ->UPDATE INVENTORY");
+                iqrr.prompt([{
+                    type:"list",
+                    message:"Continue Shopping?",
+                    name: "continueShopping",
+                    choices: ["yes","no"]
+                }]).then(function(input){
+                    if(input.continueShopping == "yes"){
+                        Start();
+                    }
+                    else{
+                        console.log("-------------------------------------------");
+                        console.log("  ->Thanks for shopping with Bamazon");
+                        console.log("===========================================");
+                    }
+                });
             }
-
-
+            else{
+                console.log("  ->Sorry, your input is invalid, please use only numbers");
+                Start();
+            }
     });
 };
+
+Start();
